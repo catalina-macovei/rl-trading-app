@@ -18,6 +18,7 @@ dist/
 
 # IDEs and editors
 .vscode/
+
 .idea/
 
 # Jupyter Notebooks
