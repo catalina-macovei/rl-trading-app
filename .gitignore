@@ -1,0 +1,41 @@
+# Python bytecode files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Virtual environment folder
+venv/
+env/
+*.env/
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# IDEs and editors
+.vscode/
+.idea/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# MacOS-specific files
+.DS_Store
+
+# Windows-specific files
+Thumbs.db
+
+# Pytest cache
+.pytest_cache/
+
+# Pipenv and Poetry lock files (if you're not using them)
+Pipfile.lock
+poetry.lock
+
+# Local configuration files
+*.env
+*.local
