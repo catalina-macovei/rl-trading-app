@@ -17,18 +17,18 @@ Explore how AI can make trading decisions based on dynamic market data. :purple_
 
 ### Installation steps 
 
-1. Create a Virtual Environment
+1. **Create a Virtual Environment**   
     A virtual environment helps isolate project dependencies    
     ```python -m venv venv```
-2. Activate the virtual environment:   
+2. **Activate the virtual environment:**       
     ```source venv/bin/activate```
-3. Install NumPy:     
+3. **Install NumPy:**         
     ```pip install numpy```
-4. Install PyTorch:   
+4. **Install PyTorch:**       
     ```pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu```
-5. Install Matplotlib:    
+5. **Install Matplotlib:**        
     ```pip install matplotlib```
-6. Install Alpha Vantage:   
+6. **Install Alpha Vantage:**       
     ```pip install alpha_vantage```
-7. Deactivate venv:    
+7. **Deactivate venv:**        
     ```deactivate```
