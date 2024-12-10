@@ -30,5 +30,9 @@ Explore how AI can make trading decisions based on dynamic market data. :purple_
     ```pip install matplotlib```
 6. **Install Alpha Vantage:**       
     ```pip install alpha_vantage```
-7. **Deactivate venv:**        
-    ```deactivate```
+7. **Install .env utils**     
+    ```pip install python-dotenv```
+8. **Create your .env file which should look like the .env.example**
+
+9. **Deactivate venv:**        
+   ```deactivate```
