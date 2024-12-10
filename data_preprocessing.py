@@ -19,7 +19,7 @@ config = {
         "train_split_size": 0.80,
     },
     "plots": {
-        "xticks_interval": 90, # show a date every 90 days
+        "xticks_interval": 90,  # show a date every 90 days
         "color_actual": "#001f3f",
         "color_train": "#3D9970",
         "color_val": "#0074D9",
@@ -27,19 +27,6 @@ config = {
         "color_pred_val": "#0074D9",
         "color_pred_test": "#FF4136",
     },
-    "model": {
-        "input_size": 1, # since we are only using 1 feature, close price
-        "num_lstm_layers": 2,
-        "lstm_size": 32,
-        "dropout": 0.2,
-    },
-    "training": {
-        "device": "cpu", # "cuda" or "cpu"
-        "batch_size": 64,
-        "num_epoch": 100,
-        "learning_rate": 0.01,
-        "scheduler_step_size": 40,
-    }
 }
 
 def download_data(config):
@@ -62,8 +49,9 @@ def download_data(config):
 
 data_date, data_close_price, num_data_points, display_date_range = download_data(config)
 
-# plot
+print(f"data_date={data_date}, \ndata_close_price={data_close_price}, \nnum_data_points={num_data_points}, \ndisplay_date_range = {display_date_range}")
 
+# plot
 fig = figure(figsize=(25, 5), dpi=80)
 fig.patch.set_facecolor((1.0, 1.0, 1.0))
 plt.plot(data_date, data_close_price, color=config["plots"]["color_actual"])
@@ -74,25 +62,35 @@ plt.title("Daily close price for " + config["alpha_vantage"]["symbol"] + ", " + 
 plt.grid(visible=True, which='major', axis='y', linestyle='--')
 plt.show()
 
-class Normalizer():
+
+class DataNormalizer:
     def __init__(self):
-        self.mu = None
-        self.sd = None
+        self.mean = None
+        self.std_dev = None
 
-    def fit_transform(self, x):
-        self.mu = np.mean(x, axis=(0), keepdims=True)
-        self.sd = np.std(x, axis=(0), keepdims=True)
-        normalized_x = (x - self.mu)/self.sd
-        return normalized_x
+    def fit_transform(self, data):
+        # calculate the mean and standard deviation
+        self.mean = np.mean(data, axis=0, keepdims=True)
+        self.std_dev = np.std(data, axis=0, keepdims=True)
 
-    def inverse_transform(self, x):
-        return (x*self.sd) + self.mu
+        # Normalize the data using the mean and standard deviation
+        normalized_data = (data - self.mean) / self.std_dev
+        return normalized_data
 
-# normalize
-scaler = Normalizer()
-normalized_data_close_price = scaler.fit_transform(data_close_price)
+    def inverse_transform(self, normalized_data):
+        # applying the inverse transform -> prices are converted back to the original scale
+        return (normalized_data * self.std_dev) + self.mean
 
 
+# an instance of the normalizer object
+normalizer = DataNormalizer()
+
+# normalizing the close price data
+normalized_data_close_price = normalizer.fit_transform(data_close_price)
+
+# print(normalized_data_close_price)
+
+# a price at stock time [t] depends on prices at stock times (t-1), (t-2)
 def prepare_data_x(x, window_size):
     # perform windowing
     n_row = x.shape[0] - window_size + 1
@@ -124,8 +122,8 @@ data_y_val = data_y[split_index:]
 to_plot_data_y_train = np.zeros(num_data_points)
 to_plot_data_y_val = np.zeros(num_data_points)
 
-to_plot_data_y_train[config["data"]["window_size"]:split_index+config["data"]["window_size"]] = scaler.inverse_transform(data_y_train)
-to_plot_data_y_val[split_index+config["data"]["window_size"]:] = scaler.inverse_transform(data_y_val)
+to_plot_data_y_train[config["data"]["window_size"]:split_index+config["data"]["window_size"]] = normalizer.inverse_transform(data_y_train)
+to_plot_data_y_val[split_index+config["data"]["window_size"]:] = normalizer.inverse_transform(data_y_val)
 
 to_plot_data_y_train = np.where(to_plot_data_y_train == 0, None, to_plot_data_y_train)
 to_plot_data_y_val = np.where(to_plot_data_y_val == 0, None, to_plot_data_y_val)
