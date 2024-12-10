@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 
 from alpha_vantage.timeseries import TimeSeries
-
+# 'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey=88XPG3SNGKGXE1SX'
 config = {
     "alpha_vantage": {
-        "key": "demo", # you can use the demo API key for this project, but please make sure to get your own API key at https://www.alphavantage.co/support/#api-key
+        "key": "88XPG3SNGKGXE1SX", #  change api key
         "symbol": "IBM",
         "outputsize": "full",
-        "key_adjusted_close": "5. adjusted close",
+        "key_adjusted_close": "4. close",
     },
     "data": {
         "window_size": 20,
@@ -41,8 +41,9 @@ config = {
 }
 
 def download_data(config):
-    ts = TimeSeries(key='demo') #you can use the demo API key for this project, but please make sure to eventually get your own API key at https://www.alphavantage.co/support/#api-key.
-    data, meta_data = ts.get_daily_adjusted(config["alpha_vantage"]["symbol"], outputsize=config["alpha_vantage"]["outputsize"])
+    ts = TimeSeries(key=config["alpha_vantage"]["key"])
+    # Change from get_daily_adjusted to get_daily bc first one is for premium = expensive
+    data, meta_data = ts.get_daily(config["alpha_vantage"]["symbol"], outputsize=config["alpha_vantage"]["outputsize"])
 
     data_date = [date for date in data.keys()]
     data_date.reverse()
