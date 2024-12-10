@@ -1,13 +1,15 @@
+from dotenv import load_dotenv
+import os
 import numpy as np
-
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
-
 from alpha_vantage.timeseries import TimeSeries
-# 'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey=88XPG3SNGKGXE1SX'
+
+load_dotenv()
+
 config = {
     "alpha_vantage": {
-        "key": "88XPG3SNGKGXE1SX", #  change api key
+        "key": os.getenv("ALPHA_VANTAGE_KEY"),
         "symbol": "IBM",
         "outputsize": "full",
         "key_adjusted_close": "4. close",
