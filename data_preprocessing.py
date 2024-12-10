@@ -92,7 +92,7 @@ normalized_data_close_price = normalizer.fit_transform(data_close_price)
 
 # a price at stock time [t] depends on prices at stock times (t-1), (t-2)
 def prepare_data_x(x, window_size):
-    # perform windowing
+    # perform windowing -> windows are slices of sequential data
     n_row = x.shape[0] - window_size + 1
     output = np.lib.stride_tricks.as_strided(x, shape=(n_row, window_size), strides=(x.strides[0], x.strides[0]))
     return output[:-1], output[-1]
@@ -128,7 +128,7 @@ to_plot_data_y_val[split_index+config["data"]["window_size"]:] = normalizer.inve
 to_plot_data_y_train = np.where(to_plot_data_y_train == 0, None, to_plot_data_y_train)
 to_plot_data_y_val = np.where(to_plot_data_y_val == 0, None, to_plot_data_y_val)
 
-## plots
+# plots
 
 fig = figure(figsize=(25, 5), dpi=80)
 fig.patch.set_facecolor((1.0, 1.0, 1.0))
