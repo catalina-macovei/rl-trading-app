@@ -25,3 +25,33 @@ Explore how AI can make trading decisions based on dynamic market data. :purple_
     ```pip install -r requirements.txt```
 4. **Deactivate venv:**        
    ```deactivate```
+
+## Trading strategies
+1. **Track Actions (Buy/Sell)**
+Reward Upon Action: Calculate the reward when the agent takes action (either buying or selling a stock).
+When the agent sells a stock after a price increase, it receives a reward proportional to the net worth increase.
+When the agent buys after a price decrease, it gets a reward based on the potential recovery.
+2. **Inactivity Discount** 
+When the agent does nothing (i.e., holds its position or simply observes), apply a discount to the accumulated reward.
+If the agent doesn't make a move, reduce the reward by a small percentage (e.g., 0.01%) per step.
+This keeps the agent motivated to act, as doing nothing results in an incremental decrease in reward.
+3. **Sell and Buy Conditions:**
+**Sell:** Reward the agent when it sells stocks that have appreciated in value since the last purchase.
+If the agent is holding positions and the price increases by a set threshold (e.g., 2%), reward the agent for taking profits.
+**Buy:** Reward the agent when it buys a stock after a price decrease.
+If the agent buys a stock that has decreased by a set threshold (e.g., 2%), reward it for potentially catching a rebound or buying at a lower price.
+4. **Penalty for Doing Nothing:** 
+Every time the agent does nothing (neither buying nor selling), apply the penalty (0.01% of the net worth) to action.
+   This penalty ensures the agent doesn't stagnate and keeps making moves to either buy or sell stocks based on the strategy.
+
+**Summary**
+
+    Buy: If the stock price decreases by more than the threshold (e.g., 2%), and the agent does not currently hold the stock, buy.
+    Reward = Positive net worth increase when the stock price increases from the purchased price.
+    
+    Sell: If the stock price increases by more than the threshold (e.g., 2%), and the agent holds the stock, sell.
+    Reward = Positive net worth increase when the stock is sold at a higher price.
+    
+    Inactivity: punish by appling a discount (0.01% of net worth for every step)
+
+
