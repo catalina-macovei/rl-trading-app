@@ -55,3 +55,6 @@ Every time the agent does nothing (neither buying nor selling), apply the penalt
     Inactivity: punish by appling a discount (0.01% of net worth for every step)
 
 
+
+
+
