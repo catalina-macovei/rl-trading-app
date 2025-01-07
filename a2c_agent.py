@@ -5,8 +5,10 @@ from actor_network import ActorNetwork
 from critic_network import CriticNetwork
 
 class A2CAgent:
-    def __init__(self, critic_alpha=0.0001, actor_alpha=0.0001, gamma=0.99, n_actions=2):
+    def __init__(self, critic_alpha=0.0001, actor_alpha=0.0001, gamma=0.99, entropy_coeff=0.5, max_grad_norm=0.5, n_actions=2):
         self.gamma = gamma
+        self.entropy_coeff = entropy_coeff
+        self.max_grad_norm = max_grad_norm
         self.n_actions = n_actions
         self.action_space = [i for i in range(self.n_actions)]
 
@@ -67,11 +69,10 @@ class A2CAgent:
             log_prob = action_probs.log_prob(action)
 
             # encourage exploring with entropy
-            entropy_coeff = 0.5
             entropy = tf.reduce_mean(action_probs.entropy())
 
             # 4. calculate log(pi_theta(a | s)) * A_hat_pi(s, a) (adjusted with the entropy)
-            actor_loss = -log_prob * tf.stop_gradient(advantage) - entropy_coeff * entropy
+            actor_loss = -log_prob * tf.stop_gradient(advantage) - self.entropy_coeff * entropy
 
             # 2. update V_hat_pi_theta using target r + gamma * V_hat_pi_theta(s')
             # MSE = 0.5 * (target - predict)^2 = 0.5 * (r + gamma * V_hat_pi_theta(s') - V_hat_pi_theta(s))^2 = 0.5 * advantage^2
@@ -82,9 +83,8 @@ class A2CAgent:
         critic_gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
 
         # gradient clipping for avoiding exploding gradients
-        max_grad_norm = 0.5
-        actor_gradients, actor_grad_norm = tf.clip_by_global_norm(actor_gradients, max_grad_norm)
-        critic_gradients, critic_grad_norm = tf.clip_by_global_norm(critic_gradients, max_grad_norm)
+        actor_gradients, actor_grad_norm = tf.clip_by_global_norm(actor_gradients, self.max_grad_norm)
+        critic_gradients, critic_grad_norm = tf.clip_by_global_norm(critic_gradients, self.max_grad_norm)
 
         # 2. + 4. backpropagation for the actor and the critic
         self.actor.optimizer.apply_gradients(zip(actor_gradients, self.actor.trainable_variables)) # theta <- theta + alpha * delta_theta J(theta)
