@@ -87,8 +87,9 @@ Final Portfolio Value: 12894.281143999988
 ![plot](./graphs/decision_plot.png)
 ## Actor-critic algorithm
 
-![alt text](batch_ac_algorithm.png)
+![alt text](ac_algorithm.png)
 
+![alt text](batch_ac_algorithm.png)
 ## DQL trading results
 ```
 Final Portfolio Value: 11845.86

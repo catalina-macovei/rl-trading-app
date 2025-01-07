@@ -64,7 +64,7 @@ class TradingEnvironment(gym.Env):
                 self.shares_held = 0
         
         else: # Hold: encourage to take an action by penalising for holding
-            penalty_for_holding = 0.001 * portfolio_value_before
+            penalty_for_holding = 0.01 * portfolio_value_before
             portfolio_value_before -= penalty_for_holding
         
         self.current_step += 1

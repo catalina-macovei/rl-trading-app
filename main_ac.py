@@ -14,20 +14,20 @@ summary_writer = tf.summary.create_file_writer(log_dir)
 # Load and preprocess data
 data = load_data('./data/AAPL.csv')
 data = preprocess_data(data)
-train_data = data[:1000]
-test_data = data[1000:]
+train_data = data[:200]
+test_data = data[200:250]
 
 env = TradingEnvironment(train_data)
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
 agent = A2CAgent(n_actions=action_size)
 
-episodes = 100
+episodes = 10
 best_score = env.reward_range[0]
 score_history = []
 load_checkpoint = False
 
-def train_agent(agent, train_data, episodes, load_checkpoint):
+def train_agent(agent, train_data, episodes):
     env = TradingEnvironment(train_data)
 
     for episode in range(episodes):
@@ -37,25 +37,27 @@ def train_agent(agent, train_data, episodes, load_checkpoint):
         actions_taken = []
         
         while not done:
+            # 1. a) take action a~pi_theta(a | s)
             action = agent.choose_action(state)
             actions_taken.append(action)
+
+            # 1. b) get (s, a, s', r)
             state_, reward, done, info = env.step(action)
             total_reward += reward
             
-            if not load_checkpoint:
-                metrics = agent.learn(state, reward, state_, done)
+            metrics = agent.learn(state, reward, state_, action, done)
                 
-                # Log training metrics per step
-                with summary_writer.as_default():
-                    tf.summary.scalar('Metrics/Reward', reward, step=env.current_step)
-                    tf.summary.scalar('Metrics/Portfolio_Value', info['portfolio_value'], step=env.current_step)
+            # Log training metrics per step
+            with summary_writer.as_default():
+                tf.summary.scalar('Metrics/Reward', reward, step=env.current_step)
+                tf.summary.scalar('Metrics/Portfolio_Value', info['portfolio_value'], step=env.current_step)
                     
-                    if metrics:
-                        tf.summary.scalar('Loss/Actor', tf.squeeze(metrics.get('actor_loss', 0)), step=env.current_step)
-                        tf.summary.scalar('Loss/Critic', metrics.get('critic_loss', 0), step=env.current_step)
-                        tf.summary.scalar('Policy/Entropy', metrics.get('entropy', 0), step=env.current_step)
-                        tf.summary.scalar('Gradients/Actor_Norm', metrics.get('actor_grad_norm', 0), step=env.current_step)
-                        tf.summary.scalar('Gradients/Critic_Norm', metrics.get('critic_grad_norm', 0), step=env.current_step)
+                if metrics:
+                    tf.summary.scalar('Loss/Actor', tf.squeeze(metrics.get('actor_loss', 0)), step=env.current_step)
+                    tf.summary.scalar('Loss/Critic', metrics.get('critic_loss', 0), step=env.current_step)
+                    tf.summary.scalar('Policy/Entropy', metrics.get('entropy', 0), step=env.current_step)
+                    tf.summary.scalar('Gradients/Actor_Norm', metrics.get('actor_grad_norm', 0), step=env.current_step)
+                    tf.summary.scalar('Gradients/Critic_Norm', metrics.get('critic_grad_norm', 0), step=env.current_step)            
             
             state = state_
             
@@ -70,6 +72,7 @@ def train_agent(agent, train_data, episodes, load_checkpoint):
                 tf.summary.scalar(f'Actions/Action_{action_idx}_Frequency', action_freq, step=episode)
                 
         print(f"Episode {episode + 1}/{episodes}, Total Reward: {total_reward}")
+
 
 def plot_decisions(prices, buy_points, sell_points):
     """
@@ -92,6 +95,7 @@ def plot_decisions(prices, buy_points, sell_points):
     plt.legend()
     plt.grid()
     plt.savefig("./graphs/demo.png")
+
 
 def test_agent(agent, test_data):
     env = TradingEnvironment(test_data)
@@ -154,5 +158,5 @@ def test_agent(agent, test_data):
             tf.summary.scalar(f'Test/Action_{action_idx}_Frequency', action_freq, step=0)
 
 
-train_agent(agent, train_data, episodes, load_checkpoint)
+train_agent(agent, train_data, episodes)
 test_agent(agent, test_data)
