@@ -26,6 +26,9 @@ Explore how AI can make trading decisions based on dynamic market data. :purple_
 4. **Deactivate venv:**        
    ```deactivate```
 
+## Interacting with environment
+![plot](./diagrams/diagram-agent-env.png)
+
 ## Trading strategies
 1. **Track Actions (Buy/Sell)**
 Reward Upon Action: Calculate the reward when the agent takes action (either buying or selling a stock).
