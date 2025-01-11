@@ -5,15 +5,15 @@ from actor_network import ActorNetwork
 from critic_network import CriticNetwork
 
 class A2CAgent:
-    def __init__(self, critic_alpha=0.0001, actor_alpha=0.0001, gamma=0.99, entropy_coeff=0.5, max_grad_norm=0.5, n_actions=2):
+    def __init__(self, critic_alpha=1e-4, actor_alpha=1e-4, gamma=0.99, entropy_coeff=0.5, max_grad_norm=0.5, n_actions=2, critic_fc1=1024, critic_fc2=512, actor_fc1=1024, actor_fc2=512):
         self.gamma = gamma
         self.entropy_coeff = entropy_coeff
         self.max_grad_norm = max_grad_norm
         self.n_actions = n_actions
         self.action_space = [i for i in range(self.n_actions)]
 
-        self.actor = ActorNetwork(n_actions=n_actions)
-        self.critic = CriticNetwork(n_actions=n_actions)
+        self.actor = ActorNetwork(n_actions=n_actions, fc1_dims=actor_fc1, fc2_dims=actor_fc2, name="online")
+        self.critic = CriticNetwork(n_actions=n_actions, fc1_dims=critic_fc1, fc2_dims=critic_fc2, name="online")
 
         self.actor.compile(optimizer=Adam(learning_rate=actor_alpha))
         self.critic.compile(optimizer=Adam(learning_rate=critic_alpha))

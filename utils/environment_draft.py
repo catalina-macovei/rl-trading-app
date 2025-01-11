@@ -73,7 +73,10 @@ class TradingEnvironment(gym.Env):
         next_price = self.data.iloc[self.current_step]['Close'] if not done else current_price
         portfolio_value_after = self.balance + (self.shares_held * next_price)
         
-        reward = (portfolio_value_after - portfolio_value_before) / portfolio_value_before
+        # with reward scaling factor - better performance
+        reward = (portfolio_value_after - portfolio_value_before) * 1e-4
+
+        # reward = (portfolio_value_after - portfolio_value_before) / portfolio_value_before
         
         # reward clipping
         reward = np.clip(reward, -1, 1)

@@ -10,7 +10,7 @@ class ActorNetwork(keras.Model):
         self.fc2_dims = fc2_dims
         self.n_actions = n_actions
         self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_a')
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, name)
 
         self.fc1 = Dense(self.fc1_dims, activation='relu')
         self.ln1 = LayerNormalization()

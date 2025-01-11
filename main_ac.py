@@ -94,7 +94,7 @@ def plot_decisions(prices, buy_points, sell_points):
     plt.ylabel("Price")
     plt.legend()
     plt.grid()
-    plt.savefig("./graphs/demo.png")
+    plt.savefig("./graphs/ac_online.png")
 
 
 def test_agent(agent, test_data):

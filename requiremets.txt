@@ -5,3 +5,4 @@ keras
 matplotlib
 gym
 tensorflow_probability
+tqdm

@@ -11,7 +11,7 @@ class CriticNetwork(keras.Model):
         self.n_actions = n_actions
         self.model_name = name
         self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_c')
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, name)
 
         self.fc1 = Dense(self.fc1_dims, activation='relu')
         self.ln1 = LayerNormalization()

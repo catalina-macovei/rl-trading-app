@@ -22,11 +22,11 @@ state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
 agent = A2CBatchAgent(n_actions=action_size)
 
-episodes = 50
+episodes = 75
 best_score = env.reward_range[0]
 score_history = []
 
-def train_agent(agent, train_data, episodes):
+def train_agent(agent, train_data, episodes, batch_size=256):
     env = TradingEnvironment(train_data)
 
     for episode in range(episodes):
@@ -41,37 +41,37 @@ def train_agent(agent, train_data, episodes):
         rewards_batch = []
         actions_batch = []
         dones_batch = []
-        batch_size = 64
 
-        # 1. sample {s_i, a_i} from pi_theta(a|s)
-        for step in range(batch_size):
-            if done:
-                return
-            action = agent.choose_action(state)
-            actions_taken.append(action)
-            next_state, reward, done, info = env.step(action)
+        while not done:
+            # 1. sample {s_i, a_i} from pi_theta(a|s)
+            for step in range(batch_size):
+                if done:
+                    return
+                action = agent.choose_action(state)
+                actions_taken.append(action)
+                next_state, reward, done, info = env.step(action)
 
-            states_batch.append(state)
-            next_states_batch.append(next_state)
-            actions_batch.append(action)
-            rewards_batch.append(reward)
-            dones_batch.append(done)
-            
-            state = next_state
-            total_reward += reward
-        
-        metrics = agent.learn(states_batch, next_states_batch, actions_batch, rewards_batch, dones_batch)
+                states_batch.append(state)
+                next_states_batch.append(next_state)
+                actions_batch.append(action)
+                rewards_batch.append(reward)
+                dones_batch.append(done)
                 
-        # Log training metrics per step
-        with summary_writer.as_default():
-            tf.summary.scalar('Metrics/Reward', reward, step=env.current_step)
-            tf.summary.scalar('Metrics/Portfolio_Value', info['portfolio_value'], step=env.current_step)
+                state = next_state
+                total_reward += reward
+            
+            metrics = agent.learn(states_batch, next_states_batch, actions_batch, rewards_batch, dones_batch)
                     
-            if metrics:
-                tf.summary.scalar('Loss/Actor', metrics.get('actor_loss', 0), step=env.current_step)
-                tf.summary.scalar('Loss/Critic', metrics.get('critic_loss', 0), step=env.current_step)
-                tf.summary.scalar('Gradients/Actor_Norm', metrics.get('actor_grad_norm', 0), step=env.current_step)
-                tf.summary.scalar('Gradients/Critic_Norm', metrics.get('critic_grad_norm', 0), step=env.current_step)            
+            # Log training metrics per step
+            with summary_writer.as_default():
+                tf.summary.scalar('Metrics/Reward', reward, step=env.current_step)
+                tf.summary.scalar('Metrics/Portfolio_Value', info['portfolio_value'], step=env.current_step)
+                        
+                if metrics:
+                    tf.summary.scalar('Loss/Actor', metrics.get('actor_loss', 0), step=env.current_step)
+                    tf.summary.scalar('Loss/Critic', metrics.get('critic_loss', 0), step=env.current_step)
+                    tf.summary.scalar('Gradients/Actor_Norm', metrics.get('actor_grad_norm', 0), step=env.current_step)
+                    tf.summary.scalar('Gradients/Critic_Norm', metrics.get('critic_grad_norm', 0), step=env.current_step)            
             
         # Log episode-level metrics
         with summary_writer.as_default():
@@ -106,7 +106,7 @@ def plot_decisions(prices, buy_points, sell_points):
     plt.ylabel("Price")
     plt.legend()
     plt.grid()
-    plt.savefig("./graphs/demo.png")
+    plt.savefig("./graphs/ac_batch.png")
 
 
 def test_agent(agent, test_data):
