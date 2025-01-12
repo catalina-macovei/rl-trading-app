@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
-from utils.environment_draft import TradingEnvironment
+# from utils.environment_draft import TradingEnvironment
+from utils.env import TradingEnvironment
 from a2c_batch_agent import A2CBatchAgent
 from a2c_agent import A2CAgent
 from utils.data_loader import load_data, preprocess_data
@@ -8,18 +9,12 @@ from tqdm import tqdm
 import tensorflow as tf
 from datetime import datetime
 import matplotlib.pyplot as plt
-
-def calculate_sharpe(df: pd.DataFrame):
-    df["daily_return"] = df["account_values"].pct_change(1)
-    if df["daily_return"].std() != 0:
-        sharpe = (252**0.5) * df["daily_return"].mean() / df["daily_return"].std()
-        return sharpe
-    else:
-        return 0
+from utils.config import *
 
 current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
 log_dir = f'logs/A2C_test_{current_time}'
 summary_writer = tf.summary.create_file_writer(log_dir)
+
 
 def plot_decisions(prices, buy_points, sell_points, plot_name):
     """
@@ -43,12 +38,6 @@ def plot_decisions(prices, buy_points, sell_points, plot_name):
     plt.grid()
     plt.savefig("./graphs/"+plot_name+".png")
 
-
-# Load and preprocess data
-data = load_data('./data/AAPL.csv')
-data = preprocess_data(data)
-test_data = data[1000:]
-
 def run_agent(agent, test_data, plot_name):
     env = TradingEnvironment(test_data)
     state = env.reset()
@@ -56,12 +45,10 @@ def run_agent(agent, test_data, plot_name):
     actions_taken = []
     done = False
 
-    buy_points = []  # Track buy points for graph
-    sell_points = []  # Track sell points for graph
-    prices = []  # Track prices for the graph
-    decisions_log = []  # Log decisions per episode
-
-    df = pd.DataFrame(columns=["daily_return", "account_values"])
+    buy_points = [] 
+    sell_points = []
+    prices = [] 
+    decisions_log = []
     
     with summary_writer.as_default():
         while not done:
@@ -89,11 +76,8 @@ def run_agent(agent, test_data, plot_name):
 
             next_price = env.data.iloc[env.current_step]['Close'] if not done else env.data.iloc[env.current_step - 1]['Close']
             portfolio_value_after = env.balance + (env.shares_held * next_price)
-            # df.loc[len(df)] = [portfolio_value_after, 0]
-            # sharpe = calculate_sharpe(df)
 
             tf.summary.scalar('Test/Total Portfolio Value/'+plot_name, portfolio_value_after, step=env.current_step-1)
-            # tf.summary.scalar('Test/Sharpe Ratio/'+plot_name, sharpe, step=env.current_step - 1)
 
 
         # Print decisions and rewards for each step
@@ -109,17 +93,24 @@ def run_agent(agent, test_data, plot_name):
         # Call function to plot the graph
         plot_decisions(prices, buy_points, sell_points, plot_name)
 
-online_agent = A2CAgent(actor_fc1=512, actor_fc2=256, critic_fc1=512, critic_fc2=256, n_actions=3)
+
+# Load and preprocess data
+test_data = load_data(TEST_DATA_PATH)
+test_data = preprocess_data(test_data)
+test_data = test_data[TEST_DATA_START:]
+
+
+online_agent = A2CAgent(actor_fc1=10, critic_fc1=10, n_actions=3)
 dummy_state = tf.random.normal([1, 9])
 online_agent.actor(dummy_state)
 online_agent.critic(dummy_state)
 online_agent.load_models()
 
-# batch_agent = A2CBatchAgent(actor_fc1=512, actor_fc2=256, critic_fc1=512, critic_fc2=256, n_actions=3)
-# dummy_state = tf.random.normal([1, 9])
-# batch_agent.actor(dummy_state)
-# batch_agent.critic(dummy_state)
-# batch_agent.load_models()
+batch_agent = A2CBatchAgent(actor_fc1=10, critic_fc1=10, n_actions=3)
+dummy_state = tf.random.normal([1, 9])
+batch_agent.actor(dummy_state)
+batch_agent.critic(dummy_state)
+batch_agent.load_models()
 
 run_agent(online_agent, test_data, "online")
-# run_agent(batch_agent, test_data, "batch")
+run_agent(batch_agent, test_data, "batch")

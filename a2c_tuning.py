@@ -11,9 +11,7 @@ import matplotlib.pyplot as plt
 import psutil
 import gc
 import os
-
-# Force TensorFlow to use CPU
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+from utils.config import *
 
 # Enable Intel MKL-DNN optimization
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '1'
@@ -23,6 +21,7 @@ current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
 log_dir = f'logs/A2C_{current_time}'
 summary_writer = tf.summary.create_file_writer(log_dir)
 
+
 def calculate_sharpe(df: pd.DataFrame):
     df["daily_return"] = df["account_values"].pct_change(1)
     if df["daily_return"].std() != 0:
@@ -31,6 +30,7 @@ def calculate_sharpe(df: pd.DataFrame):
     else:
         return 0
     
+
 def train_ac_agent(agent, train_data, episodes, trial_no=0):
     env = TradingEnvironment(train_data)
 
@@ -62,54 +62,52 @@ def train_ac_batch_agent(agent, train_data, episodes, batch_size=256, trial_no=0
 
     for episode in tqdm(range(episodes)):
         print(f"Memory usage: {psutil.Process().memory_info().rss / 1024 / 1024:.2f} MB")
-        state = env.reset()
-        done = False
-        total_reward = 0
+        
+        max_steps = 50
 
-        # generate a batch
-        states_batch = []
-        next_states_batch = [] 
-        rewards_batch = []
-        actions_batch = [] 
-        dones_batch = [] 
+        # generate a batch of trajectories
+        states_batch = [[] for _ in range(batch_size)]
+        next_states_batch = [[] for _ in range(batch_size)]
+        rewards_batch = [[] for _ in range(batch_size)]
+        actions_batch = [[] for _ in range(batch_size)]
+        dones_batch = [[] for _ in range(batch_size)]
 
-        for step in tqdm(range(batch_size)):
+        for traj in range(batch_size):
             state = env.reset()
             done = False
-            total_reward = 0
+            step = 0
 
-            states_traj = []
-            next_states_traj = []
-            rewards_traj = []
-            actions_traj = []
-            dones_traj = []
-
-            while not done:
-                # 1. sample {s_i, a_i} from pi_theta(a|s)
+            while not done or step < max_steps:
                 action = agent.choose_action(state)
                 next_state, reward, done, info = env.step(action)
 
-                states_traj.append(state)
-                next_states_traj.append(next_state)
-                actions_traj.append(action)
-                rewards_traj.append(reward)
-                dones_traj.append(done)
+                states_batch[traj].append(state)
+                next_states_batch[traj].append(next_state)
+                actions_batch[traj].append(action)
+                rewards_batch[traj].append(reward)
+                dones_batch[traj].append(done)
                     
                 state = next_state
-                total_reward += reward
-                    
-            states_batch.append(states_traj)
-            next_states_batch.append(next_states_traj)
-            actions_batch.append(actions_traj)
-            rewards_batch.append(rewards_traj)
-            dones_batch.append(dones_traj)
+                step += 1
 
-        metrics = agent.learn(states_batch, next_states_batch, actions_batch, rewards_batch, dones_batch)
-        print(f"Memory usage: {psutil.Process().memory_info().rss / 1024 / 1024:.2f} MB")
-        tf.keras.backend.clear_session()
+        states_np = np.array(states_batch, dtype=np.float32)
+        next_states_np = np.array(next_states_batch, dtype=np.float32)
+        actions_np = np.array(actions_batch, dtype=np.int32)
+        rewards_np = np.array(rewards_batch, dtype=np.float32)
+        dones_np = np.array(dones_batch, dtype=np.float32)
+
+        # train the agent on the batch using numpy arrays for memory optimization
+        metrics = agent.learn(states_np, next_states_np, actions_np, rewards_np, dones_np)
+
+        del states_batch, next_states_batch, actions_batch, rewards_batch, dones_batch
+        del states_np, next_states_np, actions_np, rewards_np, dones_np
         gc.collect()
-       
-                
+        
+        if episode % 10 == 0:
+            tf.keras.backend.clear_session()
+
+        print(f"Memory usage: {psutil.Process().memory_info().rss / 1024 / 1024:.2f} MB")
+        
     
 def validate_agent(agent, validation_data):
     account_values = []
@@ -144,26 +142,23 @@ def sample_hyperparameters(batch=False):
     gamma = np.random.choice([0.9, 0.95, 0.98, 0.99, 0.995, 0.999, 0.9999])
     entropy_coeff = np.random.uniform(0.5, 5)
     max_grad_norm = np.random.choice([0.5, 0.6, 0.7, 0.8, 0.9])
-    actor_fc1 = critic_fc1 = np.random.choice([512, 1024])
-    actor_fc2 = critic_fc2 = actor_fc1 / 2
+    actor_fc1 = critic_fc1 = np.random.choice([8, 12, 24])
 
     if batch:
-        batch_size = np.random.choice([32, 64, 128, 256])
+        batch_size = np.random.choice([8, 12, 16, 32])
     else:
         batch_size = None
 
     return {
-        'episodes': episodes, 
+        'episodes': 5, #episodes, 
         'critic_alpha': critic_alpha, 
         'actor_alpha': actor_alpha, 
         'gamma': gamma, 
         'entropy_coeff': entropy_coeff, 
         'max_grad_norm': max_grad_norm, 
-        'actor_fc1': actor_fc1, 
-        'actor_fc2': actor_fc2,
-        'critic_fc1': critic_fc1,
-        'critic_fc2': critic_fc2,
-        'batch_size': 32
+        'actor_fc1': 10, #actor_fc1, 
+        'critic_fc1': 10, #critic_fc1,
+        'batch_size': 12, #batch_size
     }
    
 
@@ -172,16 +167,14 @@ def tune_agent(train_data, validation_data, withBatch=False):
     results = []
     best_sharpe = None
     actor_fc1 = 0
-    actor_fc2 = 0
     critic_fc1 = 0
-    critic_fc2 = 0
 
     if withBatch: 
         name = 'Batch'
     else:
         name = 'Online'
 
-    for i in range(5):
+    for i in range(1):
         print('Trial ', i)
         hyperparameters = sample_hyperparameters(withBatch)
 
@@ -194,9 +187,7 @@ def tune_agent(train_data, validation_data, withBatch=False):
                 entropy_coeff=hyperparameters.get('entropy_coeff'),
                 max_grad_norm=hyperparameters.get('max_grad_norm'),
                 critic_fc1=hyperparameters.get('critic_fc1'),
-                critic_fc2=hyperparameters.get('critic_fc2'),
-                actor_fc1=hyperparameters.get('actor_fc1'),
-                actor_fc2=hyperparameters.get('actor_fc2')
+                actor_fc1=hyperparameters.get('actor_fc1')
                 )
             train_ac_batch_agent(agent, train_data, hyperparameters.get('episodes'), hyperparameters.get('batch_size'), i)
 
@@ -209,9 +200,7 @@ def tune_agent(train_data, validation_data, withBatch=False):
                 entropy_coeff=hyperparameters.get('entropy_coeff'),
                 max_grad_norm=hyperparameters.get('max_grad_norm'),
                 critic_fc1=hyperparameters.get('critic_fc1'),
-                critic_fc2=hyperparameters.get('critic_fc2'),
-                actor_fc1=hyperparameters.get('actor_fc1'),
-                actor_fc2=hyperparameters.get('actor_fc2')
+                actor_fc1=hyperparameters.get('actor_fc1')
                 )
             train_ac_agent(agent, train_data, hyperparameters.get('episodes'), i)
 
@@ -222,17 +211,13 @@ def tune_agent(train_data, validation_data, withBatch=False):
             best_sharpe = sharpe
             agent.save_models()
             critic_fc1=hyperparameters.get('critic_fc1')
-            critic_fc2=hyperparameters.get('critic_fc2')
             actor_fc1=hyperparameters.get('actor_fc1')
-            actor_fc2=hyperparameters.get('actor_fc2')
         else:
             if best_sharpe < sharpe:
                 best_sharpe = sharpe
                 agent.save_models()
                 critic_fc1=hyperparameters.get('critic_fc1')
-                critic_fc2=hyperparameters.get('critic_fc2')
                 actor_fc1=hyperparameters.get('actor_fc1')
-                actor_fc2=hyperparameters.get('actor_fc2')
 
         with summary_writer.as_default():
             tf.summary.scalar('Tuning/Trial/Total Portfolio Value/'+name, total_portfolio_value, step=i)
@@ -246,33 +231,33 @@ def tune_agent(train_data, validation_data, withBatch=False):
 
 
     print("best actor fc1", actor_fc1)
-    print("best actor fc2", actor_fc2)
     print("best critic fc1", critic_fc1)
-    print("best critic fc2", critic_fc2)
 
     return results
 
 
 # Load and preprocess data
-data = load_data('./data/AAPL.csv')
+data = load_data(TRAIN_DATA_PATH)
 data = preprocess_data(data)
-train_data = data[:800]
-validation_data = data[800:1300]
-test_data = data[1300:]
+train_data = data[:1000]
+validation_data = data[1000:]
+test_data = load_data(TEST_DATA_PATH)
+test_data = preprocess_data(test_data)
+test_data = test_data[TEST_DATA_START:]
 
-# a2c_results = tune_agent(train_data, validation_data)
+a2c_results = tune_agent(train_data, validation_data)
 a2c_batch_results = tune_agent(train_data, validation_data, True)
 
-# print('A2C results:')
-# print('############################')
-# for result in a2c_results:
-#     print('Sharpe: ', result[0])
-#     print('Total Portfolio Value: ', result[1])
-#     print("Hyperparameters:")
-#     print(result[2])
-#     print('----------------------------\n')
+print('A2C results:')
+print('############################')
+for result in a2c_results:
+    print('Sharpe: ', result[0])
+    print('Total Portfolio Value: ', result[1])
+    print("Hyperparameters:")
+    print(result[2])
+    print('----------------------------\n')
 
-# print('\n')
+print('\n')
 
 print('A2C Batch results:')
 print('############################')

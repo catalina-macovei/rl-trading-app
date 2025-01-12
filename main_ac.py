@@ -1,12 +1,12 @@
 import numpy as np
 from utils.data_loader import load_data, preprocess_data
-from utils.environment_draft import TradingEnvironment
+# from utils.environment_draft import TradingEnvironment
+from utils.env import TradingEnvironment
 from a2c_agent import A2CAgent
 import tensorflow as tf
 from datetime import datetime
 import matplotlib.pyplot as plt
-
-# from utils.env import TradingEnvironment
+from utils.config import *
 
 # Initialize TensorBoard writer
 current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
@@ -14,15 +14,16 @@ log_dir = f'logs/A2C_{current_time}'
 summary_writer = tf.summary.create_file_writer(log_dir)
 
 # Load and preprocess data
-data = load_data('./data/AAPL.csv')
-data = preprocess_data(data)
-train_data = data[:200]
-test_data = data[200:250]
+train_data = load_data(TRAIN_DATA_PATH)
+train_data = preprocess_data(train_data)
+test_data = load_data(TEST_DATA_PATH)
+test_data = preprocess_data(test_data)
+test_data = test_data[TEST_DATA_START:]
 
 env = TradingEnvironment(train_data)
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
-agent = A2CAgent(n_actions=action_size)
+agent = A2CAgent(n_actions=action_size, actor_fc1=10, critic_fc1=10, actor_alpha=0.001, critic_alpha=0.001, gamma=0.95, entropy_coeff=1)
 
 episodes = 10
 best_score = env.reward_range[0]

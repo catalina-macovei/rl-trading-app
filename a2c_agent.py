@@ -1,27 +1,27 @@
 import tensorflow as tf
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import AdamW
 import tensorflow_probability as tfp
 from actor_network import ActorNetwork
 from critic_network import CriticNetwork
 import os
 
 class A2CAgent:
-    def __init__(self, critic_alpha=1e-4, actor_alpha=1e-4, gamma=0.99, entropy_coeff=0.5, max_grad_norm=0.5, n_actions=2, critic_fc1=1024, critic_fc2=512, actor_fc1=1024, actor_fc2=512):
+    def __init__(self, critic_alpha=1e-4, actor_alpha=1e-4, gamma=0.99, entropy_coeff=0.5, max_grad_norm=0.5, n_actions=3, critic_fc1=10, actor_fc1=10):
         self.gamma = gamma
         self.entropy_coeff = entropy_coeff
         self.max_grad_norm = max_grad_norm
         self.n_actions = n_actions
         self.action_space = [i for i in range(self.n_actions)]
 
-        self.actor = ActorNetwork(n_actions=n_actions, fc1_dims=actor_fc1, fc2_dims=actor_fc2, name="online")
-        self.critic = CriticNetwork(n_actions=n_actions, fc1_dims=critic_fc1, fc2_dims=critic_fc2, name="online")
+        self.actor = ActorNetwork(n_actions=n_actions, fc1_dims=actor_fc1, name="online")
+        self.critic = CriticNetwork(n_actions=n_actions, fc1_dims=critic_fc1, name="online")
 
-        input_shape = (None, 9)
-        self.actor.build(input_shape)
-        self.critic.build(input_shape)
+        sample_state = tf.random.normal([1, 9])
+        self.actor(sample_state)
+        self.critic(sample_state)
 
-        self.actor.compile(optimizer=Adam(learning_rate=actor_alpha))
-        self.critic.compile(optimizer=Adam(learning_rate=critic_alpha))
+        self.actor.compile(optimizer=AdamW(learning_rate=actor_alpha, weight_decay=1e-5))
+        self.critic.compile(optimizer=AdamW(learning_rate=critic_alpha, weight_decay=1e-5))
 
 
     def choose_action(self, observation):
@@ -44,7 +44,6 @@ class A2CAgent:
             if not os.path.exists(self.critic.checkpoint_dir):
                 os.makedirs(self.critic.checkpoint_dir)
 
-            # Save weights with explicit naming
             actor_path = os.path.join(self.actor.checkpoint_dir, 'actor_checkpoint')
             critic_path = os.path.join(self.critic.checkpoint_dir, 'critic_checkpoint')
             
@@ -55,8 +54,6 @@ class A2CAgent:
             
         except Exception as e:
             print(f"Error saving models: {str(e)}")
-            import traceback
-            traceback.print_exc()
 
     def load_models(self):
         print('... loading models ...')
@@ -67,29 +64,22 @@ class A2CAgent:
             if not os.path.exists(self.critic.checkpoint_dir):
                 os.makedirs(self.critic.checkpoint_dir)
 
-            # Load weights piece by piece
             print("Loading actor weights...")
             actor_checkpoint = tf.train.latest_checkpoint(self.actor.checkpoint_dir)
             if actor_checkpoint:
-                print(f"Found actor checkpoint: {actor_checkpoint}")
-                status = self.actor.load_weights(actor_checkpoint)
-                status.expect_partial()  # Suppress warnings about optimizer states
+                self.actor.load_weights(actor_checkpoint)
             else:
                 raise FileNotFoundError("No actor checkpoint found")
 
             print("Loading critic weights...")
             critic_checkpoint = tf.train.latest_checkpoint(self.critic.checkpoint_dir)
             if critic_checkpoint:
-                print(f"Found critic checkpoint: {critic_checkpoint}")
-                status = self.critic.load_weights(critic_checkpoint)
-                status.expect_partial()  # Suppress warnings about optimizer states
+                self.critic.load_weights(critic_checkpoint)
             else:
                 raise FileNotFoundError("No critic checkpoint found")
 
         except Exception as e:
             print(f"Error loading models: {str(e)}")
-            import traceback
-            traceback.print_exc()
             raise
         
     def learn(self, state, reward, next_state, action, done):

@@ -1,12 +1,15 @@
 import numpy as np
 from utils.data_loader import load_data, preprocess_data
-from utils.environment_draft import TradingEnvironment
+# from utils.environment_draft import TradingEnvironment
+from utils.env import TradingEnvironment
 from a2c_batch_agent import A2CBatchAgent
 import tensorflow as tf
 from datetime import datetime
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-# from utils.env import TradingEnvironment
+import psutil
+import gc
+from utils.config import *
 
 # Initialize TensorBoard writer
 current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
@@ -14,17 +17,18 @@ log_dir = f'logs/A2C_{current_time}'
 summary_writer = tf.summary.create_file_writer(log_dir)
 
 # Load and preprocess data
-data = load_data('./data/GOOG.csv')
-data = preprocess_data(data)
-train_data = data[:1000]
-test_data = data[1000:]
+train_data = load_data(TRAIN_DATA_PATH)
+train_data = preprocess_data(train_data)
+test_data = load_data(TEST_DATA_PATH)
+test_data = preprocess_data(test_data)
+test_data = test_data[TEST_DATA_START:]
 
 env = TradingEnvironment(train_data)
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
-agent = A2CBatchAgent(n_actions=action_size)
+agent = A2CBatchAgent(n_actions=action_size, critic_fc1=10, actor_fc1=10, critic_alpha=0.001, actor_alpha=0.001, gamma=0.95, entropy_coeff=1)
 
-episodes = 1
+episodes = 500
 best_score = env.reward_range[0]
 score_history = []
 
@@ -32,51 +36,56 @@ def train_agent(agent, train_data, episodes, batch_size=32):
     env = TradingEnvironment(train_data)
 
     for episode in tqdm(range(episodes)):
-        state = env.reset()
-        done = False
-        total_reward = 0
+        print(f"Memory usage: {psutil.Process().memory_info().rss / 1024 / 1024:.2f} MB")
+        
+        max_steps = 50
 
-        # generate a batch
-        states_batch = []
-        next_states_batch = []
-        rewards_batch = []
-        actions_batch = []
-        dones_batch = []
+        # generate a batch of trajectories
+        states_batch = [[] for _ in range(batch_size)]
+        next_states_batch = [[] for _ in range(batch_size)]
+        rewards_batch = [[] for _ in range(batch_size)]
+        actions_batch = [[] for _ in range(batch_size)]
+        dones_batch = [[] for _ in range(batch_size)]
 
-        for step in range(batch_size):
+        for traj in range(batch_size):
             state = env.reset()
             done = False
-            total_reward = 0
+            step = 0
 
-            states_traj = []
-            next_states_traj = []
-            rewards_traj = []
-            actions_traj = []
-            dones_traj = []
-
-            while not done:
-                # 1. sample {s_i, a_i} from pi_theta(a|s)
+            while not done or step < max_steps:
                 action = agent.choose_action(state)
                 next_state, reward, done, info = env.step(action)
 
-                states_traj.append(state)
-                next_states_traj.append(next_state)
-                actions_traj.append(action)
-                rewards_traj.append(reward)
-                dones_traj.append(done)
+                states_batch[traj].append(state)
+                next_states_batch[traj].append(next_state)
+                actions_batch[traj].append(action)
+                rewards_batch[traj].append(reward)
+                dones_batch[traj].append(done)
                     
                 state = next_state
-                total_reward += reward
-                    
-            states_batch.append(states_traj)
-            next_states_batch.append(next_states_traj)
-            actions_batch.append(actions_traj)
-            rewards_batch.append(rewards_traj)
-            dones_batch.append(dones_traj)
+                step += 1
 
-        metrics = agent.learn(states_batch, next_states_batch, actions_batch, rewards_batch, dones_batch)
+        states_np = np.array(states_batch, dtype=np.float32)
+        next_states_np = np.array(next_states_batch, dtype=np.float32)
+        actions_np = np.array(actions_batch, dtype=np.int32)
+        rewards_np = np.array(rewards_batch, dtype=np.float32)
+        dones_np = np.array(dones_batch, dtype=np.float32)
+
+        # train the agent on the batch using numpy arrays
+        metrics = agent.learn(states_np, next_states_np, actions_np, rewards_np, dones_np)
+
+        # Clear memory
+        del states_batch, next_states_batch, actions_batch, rewards_batch, dones_batch
+        del states_np, next_states_np, actions_np, rewards_np, dones_np
+        gc.collect()
+        
+        if episode % 1 == 0:
+            agent.save_models(str(episode))
+            tf.keras.backend.clear_session()
+
+        print(f"Memory usage: {psutil.Process().memory_info().rss / 1024 / 1024:.2f} MB")
                         
-        # Log training metrics per step
+        # Log training metrics
         with summary_writer.as_default():
             tf.summary.scalar('Metrics/Reward', reward, step=env.current_step)
             tf.summary.scalar('Metrics/Portfolio_Value', info['portfolio_value'], step=env.current_step)
@@ -86,12 +95,6 @@ def train_agent(agent, train_data, episodes, batch_size=32):
                 tf.summary.scalar('Loss/Critic', metrics.get('critic_loss', 0), step=env.current_step)
                 tf.summary.scalar('Gradients/Actor_Norm', metrics.get('actor_grad_norm', 0), step=env.current_step)
                 tf.summary.scalar('Gradients/Critic_Norm', metrics.get('critic_grad_norm', 0), step=env.current_step)            
-            
-        # Log episode-level metrics
-        with summary_writer.as_default():
-            tf.summary.scalar('Episode/Total_Reward', total_reward, step=episode)
-                
-        print(f"Episode {episode + 1}/{episodes}, Total Reward: {total_reward}")
 
 
 def plot_decisions(prices, buy_points, sell_points):
@@ -124,10 +127,10 @@ def test_agent(agent, test_data):
     actions_taken = []
     done = False
 
-    buy_points = []  # Track buy points for graph
-    sell_points = []  # Track sell points for graph
-    prices = []  # Track prices for the graph
-    decisions_log = []  # Log decisions per episode
+    buy_points = []
+    sell_points = []
+    prices = [] 
+    decisions_log = []
     
     with summary_writer.as_default():
         while not done:
@@ -178,6 +181,6 @@ def test_agent(agent, test_data):
             tf.summary.scalar(f'Test/Action_{action_idx}_Frequency', action_freq, step=0)
 
 
-train_agent(agent, train_data, episodes, batch_size=32)
+train_agent(agent, train_data, episodes, batch_size=12)
 test_agent(agent, test_data)
 
