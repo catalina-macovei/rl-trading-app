@@ -26,6 +26,9 @@ Explore how AI can make trading decisions based on dynamic market data. :purple_
 4. **Deactivate venv:**        
    ```deactivate```
 
+## Interacting with environment
+![plot](./diagrams/diagram-agent-env.png)
+
 ## Trading strategies
 1. **Track Actions (Buy/Sell)**
 Reward Upon Action: Calculate the reward when the agent takes action (either buying or selling a stock).
@@ -55,6 +58,29 @@ Every time the agent does nothing (neither buying nor selling), apply the penalt
     Inactivity: punish by appling a discount (0.01% of net worth for every step)
 
 
+## DQN trading results
+Results are represented by sell, buy actions. Depending on these decisions the revenue trend line (yellow) is increasing or decreasing. The price trend (blue line) is very volatile. 
+### Configuration 
+Paste this in your ```config.py``` file.
+```
+# Training parameters
+EPISODES = 1000
+BATCH_SIZE = 32
+TARGET_UPDATE_FREQ = 5
+VALIDATION_INTERVAL = 50
 
+# Data paths
+TRAIN_DATA_PATH = './data/AAPL.csv'
+TEST_DATA_PATH = './data/GOOG.csv'
+TEST_DATA_START = 1400
+
+# Model parameters
+GAMMA = 0.95
+EPSILON = 1.0
+EPSILON_MIN = 0.05
+EPSILON_DECAY = 0.995
+LEARNING_RATE = 0.001
+```
+![plot](./graphs/decision_plot.png)
 
 

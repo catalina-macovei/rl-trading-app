@@ -27,10 +27,13 @@ class TradingEnvironment(gym.Env):
         self.done = False
 
         # Define action and observation spaces
-        self.action_space = spaces.Discrete(3)  # 0: Hold, 1: Buy, 2: Sell
+        """0: Hold, 1: Buy, 2: Sell"""
+        self.action_space = spaces.Discrete(3)
         self.observation_space = spaces.Box(
             low=-np.inf, high=np.inf, shape=(len(self.data.columns),), dtype=np.float32
         )
+
+    """resetting all variables that track the current state of the agent for each episode"""
 
     def reset(self):
         self.current_step = 0
@@ -39,14 +42,16 @@ class TradingEnvironment(gym.Env):
         self.done = False
         return self._get_observation()
 
+    """extract this first observation, which is the values of the first row in the dataset (e.g., Open, High, Low, Close, Volume for the first day)."""
+
     def _get_observation(self):
         return self.data.iloc[self.current_step].values
+
+    """takes an action and returns the next state (reward, done flag, and an empty dictionary for additional info.)"""
 
     def step(self, action):
         current_price = self.data.iloc[self.current_step]['Close']
         portfolio_value_before = self.balance + (self.shares_held * current_price)
-
-        reward = 0
 
         if action == 1:  # Buy
             shares_to_buy = int(self.balance // current_price)
@@ -55,42 +60,38 @@ class TradingEnvironment(gym.Env):
                 self.shares_held += shares_to_buy
                 self.balance -= cost
 
-                # Enhanced buy reward
-                if self.current_step > 0:
-                    previous_price = self.data.iloc[self.current_step - 1]['Close']
-                    price_change = (current_price - previous_price) / previous_price
-                    if price_change < -0.02:  # 2% drop
-                        reward = 1.0  # Stronger positive reward for buying dips
-
         elif action == 2:  # Sell
             if self.shares_held > 0:
                 sale_value = self.shares_held * current_price
                 self.balance += sale_value
-
-                # Enhanced sell reward
-                profit = sale_value - (self.shares_held * self.data.iloc[self.current_step - 1]['Close'])
-                if profit > 0:
-                    reward = profit / portfolio_value_before  # Proportional to profit
                 self.shares_held = 0
 
-        else:  # Hold
-            # Reduced holding penalty
-            reward = -0.001  # Smaller penalty for holding
+        else:  # Hold: encourage to take an action by penalising for holding
+            penalty_for_holding = 0.01 * portfolio_value_before
+            portfolio_value_before -= penalty_for_holding
 
-        # Calculate portfolio value change
-        portfolio_value_after = self.balance + (self.shares_held * current_price)
-        portfolio_change = (portfolio_value_after - portfolio_value_before) / portfolio_value_before
-        reward += portfolio_change
-
-        # Move to next step
         self.current_step += 1
         done = self.current_step >= len(self.data) - 1
 
-        return self._get_observation(), reward, done, {'portfolio_value': portfolio_value_after}
+        next_price = self.data.iloc[self.current_step]['Close'] if not done else current_price
+        portfolio_value_after = self.balance + (self.shares_held * next_price)
+
+        # with reward scaling factor - better performance
+        reward = (portfolio_value_after - portfolio_value_before) * 1e-4
+
+        # reward = (portfolio_value_after - portfolio_value_before) / portfolio_value_before
+
+        # reward clipping
+        reward = np.clip(reward, -1, 1)
+
+        info = {
+            'portfolio_value': portfolio_value_after
+        }
+
+        return self._get_observation(), reward, done, info
 
     def render(self):
         print(f"Step: {self.current_step}, Balance: {self.balance}, Shares Held: {self.shares_held}")
-
 
 
 # testing
