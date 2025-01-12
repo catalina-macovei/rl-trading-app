@@ -81,6 +81,9 @@ EPSILON_MIN = 0.05
 EPSILON_DECAY = 0.995
 LEARNING_RATE = 0.001
 ```
+```
+Final Portfolio Value: 12894.281143999988
+```
 ![plot](./graphs/decision_plot.png)
 
 
