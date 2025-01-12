@@ -8,6 +8,16 @@ from tqdm import tqdm
 import tensorflow as tf
 from datetime import datetime
 import matplotlib.pyplot as plt
+import psutil
+import gc
+import os
+
+# Force TensorFlow to use CPU
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
+# Enable Intel MKL-DNN optimization
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '1'
+
 
 current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
 log_dir = f'logs/A2C_{current_time}'
@@ -51,39 +61,54 @@ def train_ac_batch_agent(agent, train_data, episodes, batch_size=256, trial_no=0
     trial_no = str(trial_no)
 
     for episode in tqdm(range(episodes)):
+        print(f"Memory usage: {psutil.Process().memory_info().rss / 1024 / 1024:.2f} MB")
         state = env.reset()
         done = False
         total_reward = 0
-        actions_taken = []
 
         # generate a batch
         states_batch = []
-        next_states_batch = []
+        next_states_batch = [] 
         rewards_batch = []
-        actions_batch = []
-        dones_batch = []
+        actions_batch = [] 
+        dones_batch = [] 
 
-        while not done:
-            # 1. sample {s_i, a_i} from pi_theta(a|s)
-            for step in range(batch_size):
-                if done:
-                    return
+        for step in tqdm(range(batch_size)):
+            state = env.reset()
+            done = False
+            total_reward = 0
+
+            states_traj = []
+            next_states_traj = []
+            rewards_traj = []
+            actions_traj = []
+            dones_traj = []
+
+            while not done:
+                # 1. sample {s_i, a_i} from pi_theta(a|s)
                 action = agent.choose_action(state)
-                actions_taken.append(action)
                 next_state, reward, done, info = env.step(action)
 
-                states_batch.append(state)
-                next_states_batch.append(next_state)
-                actions_batch.append(action)
-                rewards_batch.append(reward)
-                dones_batch.append(done)
-                
+                states_traj.append(state)
+                next_states_traj.append(next_state)
+                actions_traj.append(action)
+                rewards_traj.append(reward)
+                dones_traj.append(done)
+                    
                 state = next_state
                 total_reward += reward
-            
-            metrics = agent.learn(states_batch, next_states_batch, actions_batch, rewards_batch, dones_batch)
+                    
+            states_batch.append(states_traj)
+            next_states_batch.append(next_states_traj)
+            actions_batch.append(actions_traj)
+            rewards_batch.append(rewards_traj)
+            dones_batch.append(dones_traj)
 
-            
+        metrics = agent.learn(states_batch, next_states_batch, actions_batch, rewards_batch, dones_batch)
+        print(f"Memory usage: {psutil.Process().memory_info().rss / 1024 / 1024:.2f} MB")
+        tf.keras.backend.clear_session()
+        gc.collect()
+       
                 
     
 def validate_agent(agent, validation_data):
@@ -138,7 +163,7 @@ def sample_hyperparameters(batch=False):
         'actor_fc2': actor_fc2,
         'critic_fc1': critic_fc1,
         'critic_fc2': critic_fc2,
-        'batch_size': batch_size
+        'batch_size': 32
     }
    
 
@@ -156,7 +181,7 @@ def tune_agent(train_data, validation_data, withBatch=False):
     else:
         name = 'Online'
 
-    for i in range(10):
+    for i in range(5):
         print('Trial ', i)
         hyperparameters = sample_hyperparameters(withBatch)
 
@@ -196,22 +221,29 @@ def tune_agent(train_data, validation_data, withBatch=False):
         if best_sharpe is None:
             best_sharpe = sharpe
             agent.save_models()
-            critic_fc1=hyperparameters.get('critic_fc1'),
-            critic_fc2=hyperparameters.get('critic_fc2'),
-            actor_fc1=hyperparameters.get('actor_fc1'),
+            critic_fc1=hyperparameters.get('critic_fc1')
+            critic_fc2=hyperparameters.get('critic_fc2')
+            actor_fc1=hyperparameters.get('actor_fc1')
             actor_fc2=hyperparameters.get('actor_fc2')
         else:
             if best_sharpe < sharpe:
                 best_sharpe = sharpe
                 agent.save_models()
-                critic_fc1=hyperparameters.get('critic_fc1'),
-                critic_fc2=hyperparameters.get('critic_fc2'),
-                actor_fc1=hyperparameters.get('actor_fc1'),
+                critic_fc1=hyperparameters.get('critic_fc1')
+                critic_fc2=hyperparameters.get('critic_fc2')
+                actor_fc1=hyperparameters.get('actor_fc1')
                 actor_fc2=hyperparameters.get('actor_fc2')
 
         with summary_writer.as_default():
             tf.summary.scalar('Tuning/Trial/Total Portfolio Value/'+name, total_portfolio_value, step=i)
             tf.summary.scalar('Tuning/Trial/Sharpe Ratio/'+name, sharpe, step=i)
+
+        del agent
+
+        tf.keras.backend.clear_session()
+        tf.compat.v1.reset_default_graph()
+        gc.collect()
+
 
     print("best actor fc1", actor_fc1)
     print("best actor fc2", actor_fc2)
@@ -228,19 +260,19 @@ train_data = data[:800]
 validation_data = data[800:1300]
 test_data = data[1300:]
 
-a2c_results = tune_agent(train_data, validation_data)
+# a2c_results = tune_agent(train_data, validation_data)
 a2c_batch_results = tune_agent(train_data, validation_data, True)
 
-print('A2C results:')
-print('############################')
-for result in a2c_results:
-    print('Sharpe: ', result[0])
-    print('Total Portfolio Value: ', result[1])
-    print("Hyperparameters:")
-    print(result[2])
-    print('----------------------------\n')
+# print('A2C results:')
+# print('############################')
+# for result in a2c_results:
+#     print('Sharpe: ', result[0])
+#     print('Total Portfolio Value: ', result[1])
+#     print("Hyperparameters:")
+#     print(result[2])
+#     print('----------------------------\n')
 
-print('\n')
+# print('\n')
 
 print('A2C Batch results:')
 print('############################')

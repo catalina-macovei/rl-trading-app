@@ -1,6 +1,7 @@
 import os
 import tensorflow.keras as keras
 from tensorflow.keras.layers import Dense, LayerNormalization
+import tensorflow as tf
 
 class CriticNetwork(keras.Model):
     def __init__(self, n_actions, fc1_dims=1024, fc2_dims=512,

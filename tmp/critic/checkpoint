@@ -1,2 +1,2 @@
-model_checkpoint_path: "batch"
-all_model_checkpoint_paths: "batch"
+model_checkpoint_path: "critic_checkpoint"
+all_model_checkpoint_paths: "critic_checkpoint"

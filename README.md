@@ -57,6 +57,13 @@ Every time the agent does nothing (neither buying nor selling), apply the penalt
     
     Inactivity: punish by appling a discount (0.01% of net worth for every step)
 
+## DQL trading results
+```
+Final Portfolio Value: 11845.86
+```
+![plot](./graphs/decision_plot_dqn.png)
+
+For both implementations, we have applied discount to decrease variance ( with the cost of introducing bias).
 
 ## Double DQL trading results
 Results are represented by sell, buy actions. Depending on these decisions the revenue trend line (yellow) is increasing or decreasing. The price trend (blue line) is very volatile. 
@@ -85,13 +92,33 @@ LEARNING_RATE = 0.001
 Final Portfolio Value: 12894.281143999988
 ```
 ![plot](./graphs/decision_plot.png)
-## Actor-critic algorithm
+
+## Advantage Actor-Critic (A2C)
+
+A2C starts from the REINFORCE algorithm and tries to reduce policy gradient's variance by substracting a baseline (the state value) from the Q-value. 
+The objective function becomes:
+, where A is the advantage:
+
+We could understand the advantage as the function that calculates how advantageous the action $a_{i,t}$ is as compared to the average performance that you expect the policy $\pi_\theta$ to get in the state $s_{i,t}$. So the gradient of the objective function takes the actions that are better than average  and increase probability and take the actions that are worse than average and decrease probability.
+
+Q can be estimate to:
+
+So A can be estimate to:
+
+Now A depends only on the state value function, which is easier to estimate than state-action value function because it takes into account only the state the agent is in. We estimate the state value function by fitting a neural network, "the critic". We represent the policy by an other neural network, "the actor", which takes as input a state and returns a distribution of probabilities for the possible actions.
+
+We have implemented two versions of the algorithm, online and with batches, both on-policy algorithms. We have chosen the actor and the critic to be different neural networks, becuase we work with numbers and the two networks don't have common features. 
+
+Initially, we have implemented the online version of the algorithm.
 
 ![alt text](ac_algorithm.png)
 
+ This algorithm is far from being optimal because of the big variance introduced by the updates of the neural network parameters every time the agent takes an action.
+
+The variance can be reduced if the actions are taken in parallel (synchronous or asynchronous) and the results are recorded in batches before updating the neural network.
+
+The second version of the algorithm collects samples of trajectories and updates the neural networks once for the entire batch.
+
 ![alt text](batch_ac_algorithm.png)
-## DQL trading results
-```
-Final Portfolio Value: 11845.86
-```
-![plot](./graphs/decision_plot_dqn.png)
+
+For both implementations, we have applied discount to decrease variance ( with the cost of introducing bias).

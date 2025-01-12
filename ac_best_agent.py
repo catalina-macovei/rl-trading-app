@@ -18,7 +18,7 @@ def calculate_sharpe(df: pd.DataFrame):
         return 0
 
 current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
-log_dir = f'logs/A2C_{current_time}'
+log_dir = f'logs/A2C_test_{current_time}'
 summary_writer = tf.summary.create_file_writer(log_dir)
 
 def plot_decisions(prices, buy_points, sell_points, plot_name):
@@ -45,9 +45,9 @@ def plot_decisions(prices, buy_points, sell_points, plot_name):
 
 
 # Load and preprocess data
-data = load_data('./data/IBM.csv')
+data = load_data('./data/AAPL.csv')
 data = preprocess_data(data)
-test_data = data[1600:]
+test_data = data[1000:]
 
 def run_agent(agent, test_data, plot_name):
     env = TradingEnvironment(test_data)
@@ -89,11 +89,11 @@ def run_agent(agent, test_data, plot_name):
 
             next_price = env.data.iloc[env.current_step]['Close'] if not done else env.data.iloc[env.current_step - 1]['Close']
             portfolio_value_after = env.balance + (env.shares_held * next_price)
-            df.loc[len(df)] = [portfolio_value_after, 0]
-            sharpe = calculate_sharpe(df)
+            # df.loc[len(df)] = [portfolio_value_after, 0]
+            # sharpe = calculate_sharpe(df)
 
             tf.summary.scalar('Test/Total Portfolio Value/'+plot_name, portfolio_value_after, step=env.current_step-1)
-            tf.summary.scalar('Test/Sharpe Ratio/'+plot_name, sharpe, step=env.current_step - 1)
+            # tf.summary.scalar('Test/Sharpe Ratio/'+plot_name, sharpe, step=env.current_step - 1)
 
 
         # Print decisions and rewards for each step
@@ -110,10 +110,16 @@ def run_agent(agent, test_data, plot_name):
         plot_decisions(prices, buy_points, sell_points, plot_name)
 
 online_agent = A2CAgent(actor_fc1=512, actor_fc2=256, critic_fc1=512, critic_fc2=256, n_actions=3)
+dummy_state = tf.random.normal([1, 9])
+online_agent.actor(dummy_state)
+online_agent.critic(dummy_state)
 online_agent.load_models()
 
-batch_agent = A2CBatchAgent(actor_fc1=1024, actor_fc2=512, critic_fc1=1024, critic_fc2=512, n_actions=3)
-batch_agent.load_models()
+# batch_agent = A2CBatchAgent(actor_fc1=512, actor_fc2=256, critic_fc1=512, critic_fc2=256, n_actions=3)
+# dummy_state = tf.random.normal([1, 9])
+# batch_agent.actor(dummy_state)
+# batch_agent.critic(dummy_state)
+# batch_agent.load_models()
 
 run_agent(online_agent, test_data, "online")
-run_agent(batch_agent, test_data, "batch")
+# run_agent(batch_agent, test_data, "batch")

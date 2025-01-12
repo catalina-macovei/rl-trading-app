@@ -3,6 +3,7 @@ from tensorflow.keras.optimizers import Adam
 import tensorflow_probability as tfp
 from actor_network import ActorNetwork
 from critic_network import CriticNetwork
+import os
 
 class A2CAgent:
     def __init__(self, critic_alpha=1e-4, actor_alpha=1e-4, gamma=0.99, entropy_coeff=0.5, max_grad_norm=0.5, n_actions=2, critic_fc1=1024, critic_fc2=512, actor_fc1=1024, actor_fc2=512):
@@ -14,6 +15,10 @@ class A2CAgent:
 
         self.actor = ActorNetwork(n_actions=n_actions, fc1_dims=actor_fc1, fc2_dims=actor_fc2, name="online")
         self.critic = CriticNetwork(n_actions=n_actions, fc1_dims=critic_fc1, fc2_dims=critic_fc2, name="online")
+
+        input_shape = (None, 9)
+        self.actor.build(input_shape)
+        self.critic.build(input_shape)
 
         self.actor.compile(optimizer=Adam(learning_rate=actor_alpha))
         self.critic.compile(optimizer=Adam(learning_rate=critic_alpha))
@@ -33,13 +38,59 @@ class A2CAgent:
 
     def save_models(self):
         print('... saving models ...')
-        self.actor.save_weights(self.actor.checkpoint_file)
-        self.critic.save_weights(self.critic.checkpoint_file)
+        try:
+            if not os.path.exists(self.actor.checkpoint_dir):
+                os.makedirs(self.actor.checkpoint_dir)
+            if not os.path.exists(self.critic.checkpoint_dir):
+                os.makedirs(self.critic.checkpoint_dir)
+
+            # Save weights with explicit naming
+            actor_path = os.path.join(self.actor.checkpoint_dir, 'actor_checkpoint')
+            critic_path = os.path.join(self.critic.checkpoint_dir, 'critic_checkpoint')
+            
+            self.actor.save_weights(actor_path)
+            self.critic.save_weights(critic_path)
+            
+            print(f"Models saved to:\n{actor_path}\n{critic_path}")
+            
+        except Exception as e:
+            print(f"Error saving models: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
     def load_models(self):
         print('... loading models ...')
-        self.actor.load_weights(self.actor.checkpoint_file)
-        self.critic.load_weights(self.critic.checkpoint_file)
+        print('... loading models ...')
+        try:
+            if not os.path.exists(self.actor.checkpoint_dir):
+                os.makedirs(self.actor.checkpoint_dir)
+            if not os.path.exists(self.critic.checkpoint_dir):
+                os.makedirs(self.critic.checkpoint_dir)
+
+            # Load weights piece by piece
+            print("Loading actor weights...")
+            actor_checkpoint = tf.train.latest_checkpoint(self.actor.checkpoint_dir)
+            if actor_checkpoint:
+                print(f"Found actor checkpoint: {actor_checkpoint}")
+                status = self.actor.load_weights(actor_checkpoint)
+                status.expect_partial()  # Suppress warnings about optimizer states
+            else:
+                raise FileNotFoundError("No actor checkpoint found")
+
+            print("Loading critic weights...")
+            critic_checkpoint = tf.train.latest_checkpoint(self.critic.checkpoint_dir)
+            if critic_checkpoint:
+                print(f"Found critic checkpoint: {critic_checkpoint}")
+                status = self.critic.load_weights(critic_checkpoint)
+                status.expect_partial()  # Suppress warnings about optimizer states
+            else:
+                raise FileNotFoundError("No critic checkpoint found")
+
+        except Exception as e:
+            print(f"Error loading models: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
         
     def learn(self, state, reward, next_state, action, done):
 
