@@ -18,7 +18,7 @@ def huber_loss(y_true, y_pred, clip_delta=1.0):
 
 class DQNAgent:
     def __init__(self, state_size, action_size, gamma=0.95, epsilon=1.0, epsilon_min=0.01,
-                 epsilon_decay=0.995, learning_rate=0.001, strategy="double-dqn"):
+                 epsilon_decay=0.995, learning_rate=0.001, strategy=""):
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=100000)  # Increased memory size

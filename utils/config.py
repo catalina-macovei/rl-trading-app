@@ -27,5 +27,5 @@ GRID_ALPHA = 0.3
 
 # File paths
 DQN_MODEL_SAVE_PATH = './models/trained_dqn_model_test.keras'
-DECISION_PLOT_DQN_PATH = './graphs/decision_plot.png'
+DECISION_PLOT_DQN_PATH = './graphs/decision_plot_test.png'
 DQN_TRAINING_METRICS_PATH = './graphs/training_metrics_test.png'
