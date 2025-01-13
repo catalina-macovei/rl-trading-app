@@ -63,7 +63,6 @@ Final Portfolio Value: 11845.86
 ```
 ![plot](./graphs/decision_plot_dqn.png)
 
-For both implementations, we have applied discount to decrease variance ( with the cost of introducing bias).
 
 ## Double DQL trading results
 Results are represented by sell, buy actions. Depending on these decisions the revenue trend line (yellow) is increasing or decreasing. The price trend (blue line) is very volatile. 

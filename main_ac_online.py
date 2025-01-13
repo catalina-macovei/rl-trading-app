@@ -55,7 +55,6 @@ def train_agent(agent, train_data, episodes):
             
             metrics = agent.learn(state, reward, state_, action, done)
                 
-            # Log training metrics per step
             with summary_writer.as_default():
                 tf.summary.scalar('Metrics/Reward', reward, step=env.current_step)
                 tf.summary.scalar('Metrics/Portfolio_Value', info['portfolio_value'], step=env.current_step)
