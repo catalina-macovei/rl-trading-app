@@ -58,7 +58,7 @@ Every time the agent does nothing (neither buying nor selling), apply the penalt
     Inactivity: punish by appling a discount (0.01% of net worth for every step)
 
 
-## DQN trading results
+## Double DQL trading results
 Results are represented by sell, buy actions. Depending on these decisions the revenue trend line (yellow) is increasing or decreasing. The price trend (blue line) is very volatile. 
 ### Configuration 
 Paste this in your ```config.py``` file.
@@ -87,3 +87,8 @@ Final Portfolio Value: 12894.281143999988
 ![plot](./graphs/decision_plot.png)
 
 
+## DQL trading results
+```
+Final Portfolio Value: 11845.86
+```
+![plot](./graphs/decision_plot_dqn.png)
