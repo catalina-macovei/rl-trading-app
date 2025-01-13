@@ -45,8 +45,8 @@ class A2CBatchAgent:
             if not os.path.exists(self.critic.checkpoint_dir):
                 os.makedirs(self.critic.checkpoint_dir)
 
-            actor_path = os.path.join(self.actor.checkpoint_dir, 'actor_checkpoint' + '_' + episode_no)
-            critic_path = os.path.join(self.critic.checkpoint_dir, 'critic_checkpoint' + '_' + episode_no)
+            actor_path = os.path.join(self.actor.checkpoint_dir, 'actor_checkpoint_batch_' + '_' + episode_no)
+            critic_path = os.path.join(self.critic.checkpoint_dir, 'critic_checkpoint_batch_' + '_' + episode_no)
             
             self.actor.save_weights(actor_path)
             self.critic.save_weights(critic_path)
@@ -67,6 +67,7 @@ class A2CBatchAgent:
             print("Loading actor weights...")
             actor_checkpoint = tf.train.latest_checkpoint(self.actor.checkpoint_dir)
             if actor_checkpoint:
+                print('Loading ', actor_checkpoint)
                 self.actor.load_weights(actor_checkpoint)
             else:
                 raise FileNotFoundError("No actor checkpoint found")
@@ -74,6 +75,7 @@ class A2CBatchAgent:
             print("Loading critic weights...")
             critic_checkpoint = tf.train.latest_checkpoint(self.critic.checkpoint_dir)
             if critic_checkpoint:
+                print('Loading ', critic_checkpoint)
                 self.critic.load_weights(critic_checkpoint)
             else:
                 raise FileNotFoundError("No critic checkpoint found")

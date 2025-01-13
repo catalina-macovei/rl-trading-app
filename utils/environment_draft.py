@@ -26,7 +26,6 @@ class TradingEnvironment(gym.Env):
         self.shares_held = 0
         self.done = False
 
-        # Define action and observation spaces
         """0: Hold, 1: Buy, 2: Sell"""
         self.action_space = spaces.Discrete(3)
         self.observation_space = spaces.Box(
@@ -63,7 +62,7 @@ class TradingEnvironment(gym.Env):
                 self.balance += sale_value
                 self.shares_held = 0
         
-        else: # Hold: encourage to take an action by penalising for holding
+        else: # Hold
             penalty_for_holding = 0.01 * portfolio_value_before
             portfolio_value_before -= penalty_for_holding
         
@@ -75,8 +74,6 @@ class TradingEnvironment(gym.Env):
         
         # with reward scaling factor - better performance
         reward = (portfolio_value_after - portfolio_value_before) * 1e-4
-
-        # reward = (portfolio_value_after - portfolio_value_before) / portfolio_value_before
         
         # reward clipping
         reward = np.clip(reward, -1, 1)

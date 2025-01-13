@@ -118,7 +118,7 @@ We have implemented two versions of the algorithm, online and with batches, both
 
 Initially, we have implemented the online version of the algorithm.
 
-![alt text](ac_algorithm.png)
+![alt text](./diagrams/ac_algorithm.png)
 
  This algorithm is far from being optimal because of the big variance introduced by the updates of the neural network parameters every time the agent takes an action.
 
@@ -126,6 +126,83 @@ The variance can be reduced if the actions are taken in parallel (synchronous or
 
 The second version of the algorithm collects samples of trajectories and updates the neural networks once for the entire batch.
 
-![alt text](batch_ac_algorithm.png)
+![alt text](./diagrams/batch_ac_algorithm.png)
 
 For both implementations, we have applied discount to decrease variance (with the cost of introducing bias).
+
+### A2C with batches
+
+```
+# Training parameters
+BATCH_SIZE = 12
+TRAJECTORY_LENGTH = 50
+
+# Data paths
+TRAIN_DATA_PATH = './data/AAPL.csv'
+TEST_DATA_PATH = './data/GOOG.csv'
+TEST_DATA_START = 1400
+
+# Model parameters
+GAMMA = 0.95
+LEARNING_RATE = 0.001
+ACTOR_NETWORK_LAYER_NEURONS = 8
+CRITIC_NETWORK_LAYER_NEURONS = 8
+```
+```
+EPISODES = 50
+Final Portfolio Value: 10989.362058999997
+```
+![plot](./graphs/decision_plot_a2c_batch_50_episodes.png)
+
+```
+EPISODES = 140
+Final Portfolio Value: 13550.161085000003
+```
+![plot](./graphs/decision_plot_a2c_batch_140_episodes.png)
+
+```
+EPISODES = 200
+Final Portfolio Value: 13458.452086999994
+```
+![plot](./graphs/decision_plot_a2c_batch_200_episodes.png)
+
+### A2C online
+
+```
+# Data paths
+TRAIN_DATA_PATH = './data/AAPL.csv'
+TEST_DATA_PATH = './data/GOOG.csv'
+TEST_DATA_START = 1400
+
+# Model parameters
+GAMMA = 0.95
+LEARNING_RATE = 0.001
+ACTOR_NETWORK_LAYER_NEURONS = 8
+CRITIC_NETWORK_LAYER_NEURONS = 8
+```
+```
+EPISODES = 50
+Final Portfolio Value: 10464.657096000015
+```
+![plot](./graphs/decision_plot_a2c_online_50_episodes.png)
+
+```
+EPISODES = 140
+Final Portfolio Value: 9069.028436999994
+```
+![plot](./graphs/decision_plot_a2c_online_140_episodes.png)
+
+
+## DQN vs A2C online vs A2C batch
+We selected for the comparison the best results from each algorithm.
+- Date training: Acțiuni AAPL.csv
+- Date test: Acțiuni GOOG.csv
+- Interval de timp: 18 luni (01/03/2016 - 01/09/2017)
+- Results: 
+  * A2C batch has the biggest return ≅ 12600$ 
+  * A2C online has the smallest return ≅ 500$
+  * A2C batch has in average comparable results with DQN
+  * A2C online is much more unstable than DQN and A2C batch
+  * DQN's decisions seem more reasonable than the decisions taken by A2C.
+
+

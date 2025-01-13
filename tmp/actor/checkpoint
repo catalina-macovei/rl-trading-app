@@ -1,2 +1,2 @@
-model_checkpoint_path: "actor_checkpoint_0"
-all_model_checkpoint_paths: "actor_checkpoint_0"
+model_checkpoint_path: "actor_checkpoint_batch__50"
+all_model_checkpoint_paths: "actor_checkpoint_batch__50"

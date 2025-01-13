@@ -36,7 +36,7 @@ class A2CAgent:
 
         return action.numpy()[0]
 
-    def save_models(self):
+    def save_models(self, episode_no=''):
         print('... saving models ...')
         try:
             if not os.path.exists(self.actor.checkpoint_dir):
@@ -44,8 +44,8 @@ class A2CAgent:
             if not os.path.exists(self.critic.checkpoint_dir):
                 os.makedirs(self.critic.checkpoint_dir)
 
-            actor_path = os.path.join(self.actor.checkpoint_dir, 'actor_checkpoint')
-            critic_path = os.path.join(self.critic.checkpoint_dir, 'critic_checkpoint')
+            actor_path = os.path.join(self.actor.checkpoint_dir, 'actor_checkpoint_online_' + episode_no)
+            critic_path = os.path.join(self.critic.checkpoint_dir, 'critic_checkpoint_online_' + episode_no)
             
             self.actor.save_weights(actor_path)
             self.critic.save_weights(critic_path)

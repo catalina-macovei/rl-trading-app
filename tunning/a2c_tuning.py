@@ -13,9 +13,6 @@ import gc
 import os
 from utils.config import *
 
-# Enable Intel MKL-DNN optimization
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '1'
-
 
 current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
 log_dir = f'logs/A2C_{current_time}'
@@ -150,15 +147,15 @@ def sample_hyperparameters(batch=False):
         batch_size = None
 
     return {
-        'episodes': 5, #episodes, 
+        'episodes': episodes, 
         'critic_alpha': critic_alpha, 
         'actor_alpha': actor_alpha, 
         'gamma': gamma, 
         'entropy_coeff': entropy_coeff, 
         'max_grad_norm': max_grad_norm, 
-        'actor_fc1': 10, #actor_fc1, 
-        'critic_fc1': 10, #critic_fc1,
-        'batch_size': 12, #batch_size
+        'actor_fc1': actor_fc1, 
+        'critic_fc1': critic_fc1,
+        'batch_size': batch_size
     }
    
 
@@ -174,7 +171,7 @@ def tune_agent(train_data, validation_data, withBatch=False):
     else:
         name = 'Online'
 
-    for i in range(1):
+    for i in range(10):
         print('Trial ', i)
         hyperparameters = sample_hyperparameters(withBatch)
 
