@@ -56,6 +56,18 @@ Every time the agent does nothing (neither buying nor selling), apply the penalt
     Reward = Positive net worth increase when the stock is sold at a higher price.
     
     Inactivity: punish by appling a discount (0.01% of net worth for every step)
+# Agents implepentation & results
+## DQL implementation
+A general perspective on the algorithm:
+```
+Initialize Q-function approximation
+Repeat:
+    Collect experience
+    Update Q-function approximation
+```
+For updating our q-function estimate, we make use of the Bellman equation.
+![image](https://github.com/user-attachments/assets/3044a3c5-576c-4efb-b83a-20e54d1d8729)
+
 
 ## DQL trading results
 ```
