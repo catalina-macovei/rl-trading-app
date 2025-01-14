@@ -96,22 +96,38 @@ Final Portfolio Value: 12894.281143999988
 
 A2C starts from the REINFORCE algorithm and tries to reduce policy gradient's variance by substracting a baseline (the state value) from the Q-value. 
 The objective function becomes:
-$$\Delta_\theta J(\theta) \approx {1 \over N} \sum_{i = 1}^N \sum_{t = 1} ^ T \Delta_\theta log\pi_\theta(a_{i,t} | s_{i,t})A^\pi(s_{i,t},a_{i,t})$$ 
+
+
+$$\Delta_\theta J(\theta) \approx {1 \over N} \sum_{i = 1}^N \sum_{t = 1} ^ T \Delta_\theta log\pi_\theta(a_{i,t} | s_{i,t})A^\pi(s_{i,t},a_{i,t})$$
+
+
 where A is the advantage:
-$$ A^\pi(s_{i,t}, a_{i,t}) = Q(s_{i,t}, a_{i,t}) - V(s_{i,t})$$
+
+
+$$A^\pi(s_{i,t}, a_{i,t}) = Q(s_{i,t}, a_{i,t}) - V(s_{i,t})$$
+
 
 We could understand the advantage as the function that calculates how advantageous the action $a_{i,t}$ is as compared to the average performance that you expect the policy $\pi_\theta$ to get in the state $s_{i,t}$. So the gradient of the objective function takes the actions that are better than average  and increase probability and take the actions that are worse than average and decrease probability.
 
 Q can be estimate to:
+
+
 $$Q^\pi(s_t, a_t) \approx r(s_t,a_t) + V^\pi(s_{t+1})$$
 
+
 So A can be estimate to:
+
+
 $$A^\pi(s_t,a_t) \approx r(s_t,a_t) + V^\pi(s_{t+1}) - V^\pi(s_t)$$
+
 
 Now A depends only on the state value function, which is easier to estimate than state-action value function because it takes into account only the state the agent is in. We estimate the state value function by fitting a neural network, "the critic". We represent the policy by an other neural network, "the actor", which takes as input a state and returns a distribution of probabilities for the possible actions.
 
 For fitting the state value function, we have used the MSE loss:
+
+
 $${\cal L} (\phi) = {1 \over 2} \sum_i ||\hat {V}_\phi^\pi(s_i)-y_i||^2$$
+
 
 We have implemented two versions of the algorithm, online and with batches, both on-policy algorithms. We have chosen the actor and the critic to be different neural networks, becuase we work with numbers and the two networks don't have common features. 
 
