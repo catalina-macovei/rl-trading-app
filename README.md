@@ -198,10 +198,21 @@ We selected for the comparison the best results from each algorithm.
 - Date test: Acțiuni GOOG.csv
 - Interval de timp: 18 luni (01/03/2016 - 01/09/2017)
 - Results: 
-  * A2C batch has the biggest return ≅ 12600$ 
+  * A2C batch has the biggest return ≅ 3550$ 
   * A2C online has the smallest return ≅ 500$
   * A2C batch has in average comparable results with DQN
   * A2C online is much more unstable than DQN and A2C batch
   * DQN's decisions seem more reasonable than the decisions taken by A2C.
 
-
+## Resources
+- A2C algorihm implementation and fine-tuning
+  - https://github.com/DLR-RM/stable-baselines3/tree/master/stable_baselines3
+- Reinforcement Learning Course UC Berkeley 
+  - https://www.youtube.com/playlist?list=PL_iWQOsE6TfVYGEGiAOMaOzzv41Jfm_Ps
+- Medium article on policy gradient algorithms
+  - https://jonathan-hui.medium.com/rl-policy-gradients-explained-9b13b688b146
+- A2C online algorithm with implementation
+  - https://www.youtube.com/watch?v=LawaN3BdI00&t=1802s
+  - https://github.com/philtabor/Youtube-Code-Repository/blob/master/ReinforcementLearning/PolicyGradient/actor_critic/tensorflow2/actor_critic.py
+- Overview on trading with RL
+  - https://medium.com/@zhonghong9998/using-reinforcement-learning-to-optimize-stock-trading-strategies-a77d35ea3308
