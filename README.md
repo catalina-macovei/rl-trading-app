@@ -232,3 +232,7 @@ We selected for the comparison the best results from each algorithm.
   - https://github.com/philtabor/Youtube-Code-Repository/blob/master/ReinforcementLearning/PolicyGradient/actor_critic/tensorflow2/actor_critic.py
 - Overview on trading with RL
   - https://medium.com/@zhonghong9998/using-reinforcement-learning-to-optimize-stock-trading-strategies-a77d35ea3308
+- DDQL implementation
+  - https://github.com/pskrunner14/trading-bot/tree/master
+- DQN tutorial
+  - https://medium.com/@cedric.vandelaer/reinforcement-learning-dqn-part-1-2-aac5f1e6e3be
