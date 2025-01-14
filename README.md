@@ -93,16 +93,15 @@ EPSILON_DECAY = 0.995
 LEARNING_RATE = 0.001
 ```
 ```
-Final Portfolio Value: 12894.281143999988
-```
-```
 Final Portfolio Value: 11845.86
 ```
 ![plot](./graphs/decision_plot_dqn.png)
 
 
 ## Double DQL trading results
-
+```
+Final Portfolio Value: 12894.281143999988
+```
 ![plot](./graphs/decision_plot.png)
 
 ## Advantage Actor-Critic (A2C)
