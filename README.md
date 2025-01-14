@@ -70,13 +70,6 @@ For updating our q-function estimate, we make use of the Bellman equation.
 
 
 ## DQL trading results
-```
-Final Portfolio Value: 11845.86
-```
-![plot](./graphs/decision_plot_dqn.png)
-
-
-## Double DQL trading results
 Results are represented by sell, buy actions. Depending on these decisions the revenue trend line (yellow) is increasing or decreasing. The price trend (blue line) is very volatile. 
 ### Configuration 
 Paste this in your ```config.py``` file.
@@ -102,6 +95,14 @@ LEARNING_RATE = 0.001
 ```
 Final Portfolio Value: 12894.281143999988
 ```
+```
+Final Portfolio Value: 11845.86
+```
+![plot](./graphs/decision_plot_dqn.png)
+
+
+## Double DQL trading results
+
 ![plot](./graphs/decision_plot.png)
 
 ## Advantage Actor-Critic (A2C)
